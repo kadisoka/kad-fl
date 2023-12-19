@@ -54,14 +54,21 @@ func RunServers(
 	}
 
 	// Wait for the shutdown signal
-	<-shutdownSignal
+	select {
+	case <-shutdownSignal:
+	case <-ctx.Done():
+	}
 
 	log.Info().Msg("Shutting down servers...")
 
 	// Start another go-routine to catch another signal so the shutdown
 	// could be forced. If we get another signal, we'll exit immediately.
 	go func() {
-		<-shutdownSignal
+		select {
+		case <-shutdownSignal:
+		case <-ctx.Done():
+		}
+
 		log.Info().Msg("Forced shutdown.")
 		os.Exit(0)
 	}()
