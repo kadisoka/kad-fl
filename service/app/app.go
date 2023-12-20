@@ -87,7 +87,7 @@ func Instance() App {
 
 // Instantiate global instance of App with the default implementation.
 func Init(appInfo app.Info) (App, error) {
-	err := errors.Msg("already initialized")
+	err := errors.Msg("app instance already initialized")
 	defAppOnce.Do(func() {
 		err = nil
 
@@ -138,7 +138,7 @@ func Init(appInfo app.Info) (App, error) {
 
 // InitCustom
 func InitCustom(customApp App) error {
-	err := errors.Msg("already initialized")
+	err := errors.Msg("app instance already initialized")
 	defAppOnce.Do(func() {
 		err = nil
 		defApp = customApp

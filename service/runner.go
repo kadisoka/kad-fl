@@ -31,9 +31,9 @@ func RunServers(
 	for _, srv := range servers {
 		serversStopWaiter.Add(1)
 		go func(innerSrv Server) {
-			srvName := innerSrv.ServiceInfo().Name
+			srvName := innerSrv.ServerInfo().Name
 			log.Info().Msgf("Starting server %s...", srvName)
-			err := innerSrv.Serve()
+			err := innerSrv.Serve(ctx)
 			if err != nil {
 				log.Fatal().Err(err).
 					Msgf("%s serve", srvName)
@@ -80,7 +80,7 @@ func RunServers(
 
 	for _, srv := range servers {
 		go func(innerSrv Server) {
-			srvName := innerSrv.ServiceInfo().Name
+			srvName := innerSrv.ServerInfo().Name
 			log.Info().Msgf("Shutting down server %s...", srvName)
 			err := innerSrv.Shutdown(shutdownCtx)
 			if err != nil {
