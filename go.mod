@@ -1,9 +1,9 @@
 module github.com/kadisoka/kad-fl
 
-go 1.21.5
+go 1.21
 
 require (
-	github.com/alloyzeus/go-azfl v0.0.0-20220806070209-0366747c79a9
+	github.com/alloyzeus/go-azfl v0.0.0-20231220071816-9740126a2d07
 	github.com/rez-go/stev v0.0.0-20220607035830-a584f4607939
 	github.com/rs/zerolog v1.31.0
 )

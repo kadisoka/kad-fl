@@ -16,15 +16,29 @@ type Server interface {
 	// Shutdown gracefully stops the server.
 	Shutdown(context.Context) error
 
-	// IsAcceptingClients returns true if the service is ready to serve clients.
-	IsAcceptingClients() bool
-
-	// IsHealthy returns true if the service is considerably healthy.
-	IsHealthy() bool
+	// ServerHealth is used to check the health status of the server.
+	ServerHealth() ServerHealth
 }
 
 type ServerInfo struct {
 	Name string
 
 	ServiceInfo Info
+}
+
+// ServerHealth holds information about a server's health details.
+//
+// Note that this structure does not have indication for liveness because
+// when a server is able to respond to health query,
+// the server is assumed to be alive.
+type ServerHealth struct {
+	// Ready indicates that the server is open to accepting clients
+	Ready bool
+
+	// Components holds information about server components' health.
+	Components map[string]ServerComponentHealth
+}
+
+type ServerComponentHealth struct {
+	OK bool
 }

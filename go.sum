@@ -1,5 +1,5 @@
-github.com/alloyzeus/go-azfl v0.0.0-20220806070209-0366747c79a9 h1:xwCVCvz4q3+WAdbF3C7z4x7j8idRuSXZhqfcrIjY8gM=
-github.com/alloyzeus/go-azfl v0.0.0-20220806070209-0366747c79a9/go.mod h1:1HUVTCODfA+fymnwpfT3DoTz5vIhBzdbIjKsJ1VDVDs=
+github.com/alloyzeus/go-azfl v0.0.0-20231220071816-9740126a2d07 h1:6iULNU8NCy5rRi9wKdjSYyMVKWD3kmP7kYMJW3fYyu4=
+github.com/alloyzeus/go-azfl v0.0.0-20231220071816-9740126a2d07/go.mod h1:Xi1SJoY0VACX/IThW87UueCKe2OzTYrPt8YFV430sos=
 github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=

@@ -19,7 +19,7 @@ type App interface {
 	InstanceID() string
 
 	AddServiceServer(service.Server)
-	IsAllServiceServersAcceptingClients() bool
+	IsAllServiceServersReady() bool
 
 	Run(context.Context)
 }
@@ -53,11 +53,11 @@ func (appBase *AppBase) Run(ctx context.Context) {
 	service.RunServers(ctx, appBase.ServiceServers(), nil)
 }
 
-// IsAllServersAcceptingClients checks if every server is accepting clients.
-func (appBase *AppBase) IsAllServiceServersAcceptingClients() bool {
+// IsAllServiceServersReady checks if every server is ready to accept clients.
+func (appBase *AppBase) IsAllServiceServersReady() bool {
 	servers := appBase.ServiceServers()
 	for _, srv := range servers {
-		if !srv.IsAcceptingClients() {
+		if health := srv.ServerHealth(); !health.Ready {
 			return false
 		}
 	}
