@@ -23,8 +23,8 @@ type ServerConfig struct {
 
 func NewServer(
 	serviceIdentifier string,
-	handler http.Handler,
 	config ServerConfig,
+	handler http.Handler,
 ) (*Server, error) {
 	if config.ServePort <= 0 {
 		return nil, errors.Arg("config.ServePort invalid")
