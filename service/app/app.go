@@ -4,7 +4,13 @@ package app
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/alloyzeus/go-azfl/errors"
 	"github.com/kadisoka/kad-fl/app"
@@ -18,19 +24,26 @@ type App interface {
 
 	InstanceID() string
 
-	AddServiceServer(service.Server)
-	IsAllServiceServersReady() bool
+	AddService(service.Service)
+	IsAllServicesReady() bool
 
 	Run(context.Context)
+
+	// Status reports the app's overall status including all services.
+	// This method is designed to be used in health checks.
+	Status() service.Status
 }
 
 // AppBase is the base layer for an app.
 type AppBase struct {
+	mutex sync.RWMutex
+	log   *slog.Logger
+
 	appInfo    app.Info
 	instanceID string
+	isStarted  bool
 
-	servers   []service.Server
-	serversMu sync.RWMutex
+	services []service.Service
 }
 
 var _ App = &AppBase{}
@@ -39,37 +52,168 @@ func (appBase *AppBase) AppInfo() app.Info { return appBase.appInfo }
 
 func (appBase *AppBase) InstanceID() string { return appBase.instanceID }
 
-// AddServiceServer adds a server to be run simultaneously. Do NOT call this
+// AddService adds a service to be run simultaneously. Do NOT call this
 // method after the app has been started.
-func (appBase *AppBase) AddServiceServer(srv service.Server) {
-	appBase.serversMu.Lock()
-	appBase.servers = append(appBase.servers, srv)
-	appBase.serversMu.Unlock()
+func (appBase *AppBase) AddService(srv service.Service) {
+	appBase.mutex.Lock()
+	defer appBase.mutex.Unlock()
+
+	if !appBase.isStarted {
+		appBase.services = append(appBase.services, srv)
+	}
 }
 
-// Run runs all the servers. Do NOT add any new server after this method
+// Run runs all the services. Do NOT add any new service after this method
 // was called.
 func (appBase *AppBase) Run(ctx context.Context) {
-	service.RunServers(ctx, appBase.ServiceServers(), nil)
+	services := appBase.Services()
+	if len(services) == 0 {
+		return
+	}
+
+	log := appBase.log
+
+	if !func() bool {
+		appBase.mutex.Lock()
+		defer appBase.mutex.Unlock()
+
+		if appBase.isStarted {
+			log.Info("App is already running")
+			return false
+		}
+		appBase.isStarted = true
+		return true
+	}() {
+		return
+	}
+
+	var shutdownSignal <-chan os.Signal
+
+	// Start a go-routine to detect that all services are ready
+	go func() {
+		for {
+			time.Sleep(200 * time.Millisecond)
+			if appBase.IsAllServicesReady() {
+				log.Info("All services are ready")
+				break
+			}
+		}
+	}()
+
+	// Used to determine if all services have stopped.
+	var servicesStopWaiter sync.WaitGroup
+
+	log.Info("Starting all services...")
+
+	// Start the services
+	for _, srv := range services {
+		servicesStopWaiter.Add(1)
+		go func(innerSrv service.Service) {
+			srvName := innerSrv.ServiceInfo().Name
+			log.Info(fmt.Sprintf("Starting %s...", srvName))
+			err := innerSrv.Serve(ctx)
+			if err != nil {
+				log.Error(fmt.Sprintf("%s: %v", srvName, err))
+				os.Exit(-1)
+			} else {
+				log.Info(fmt.Sprintf("%s stopped", srvName))
+			}
+			servicesStopWaiter.Done()
+		}(srv)
+	}
+
+	// We set up the signal handler (interrupt and terminate).
+	// We are using the signal to gracefully and forcefully stop the service.
+	if shutdownSignal == nil {
+		sigChan := make(chan os.Signal, 1)
+		// Listen to interrupt and terminal signals
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		shutdownSignal = sigChan
+	}
+
+	// Wait for the shutdown signal
+	select {
+	case <-shutdownSignal:
+		log.Info("Got shutdown signal")
+	case <-ctx.Done():
+		log.Info("Context is done")
+	}
+
+	log.Info("Shutting down all services...")
+
+	// Start another go-routine to catch another signal so the shutdown
+	// could be forced. If we get another signal, we'll exit immediately.
+	go func() {
+		<-shutdownSignal
+
+		log.Info("Forced shutdown.")
+		os.Exit(0)
+	}()
+
+	// Gracefully shutdown the services
+	shutdownCtx, shutdownCtxCancel := context.WithTimeout(
+		context.Background(), 15*time.Second)
+	defer shutdownCtxCancel()
+
+	for _, srv := range services {
+		go func(innerSrv service.Service) {
+			srvName := innerSrv.ServiceInfo().Name
+			log.Info(fmt.Sprintf("Shutting down %s...", srvName))
+			err := innerSrv.ShutdownService(shutdownCtx)
+			if err != nil {
+				log.Error(fmt.Sprintf("Service %s shutdown with error: %v", srvName, err))
+			}
+		}(srv)
+	}
+
+	// Wait for all services to stop.
+	servicesStopWaiter.Wait()
+
+	log.Info("Services are gracefully stopped.")
 }
 
-// IsAllServiceServersReady checks if every server is ready to accept clients.
-func (appBase *AppBase) IsAllServiceServersReady() bool {
-	servers := appBase.ServiceServers()
-	for _, srv := range servers {
-		if health := srv.ServerHealth(); !health.Ready {
+func (appBase *AppBase) Status() service.Status {
+	services := appBase.Services()
+
+	components := map[string]service.ComponentStatus{}
+	allReady := true
+
+	for _, svc := range services {
+		status := svc.ServiceStatus()
+		if !status.Ready {
+			allReady = false
+		}
+		comp := service.ComponentStatus{
+			IsInterprocess: false,
+			Ready:          &status.Ready,
+			Components:     status.Components,
+		}
+		components[svc.ServiceInfo().Name] = comp
+	}
+
+	return service.Status{
+		Ready:      allReady,
+		Components: components,
+	}
+}
+
+// IsAllServicesReady checks if every service is ready to accept clients.
+func (appBase *AppBase) IsAllServicesReady() bool {
+	services := appBase.Services()
+	for _, srv := range services {
+		if status := srv.ServiceStatus(); !status.Ready {
 			return false
 		}
 	}
 	return true
 }
 
-// ServiceServers returns an array of servers added to this app.
-func (appBase *AppBase) ServiceServers() []service.Server {
-	out := make([]service.Server, len(appBase.servers))
-	appBase.serversMu.RLock()
-	copy(out, appBase.servers)
-	appBase.serversMu.RUnlock()
+// Services returns an array of services added to this app.
+func (appBase *AppBase) Services() []service.Service {
+	out := make([]service.Service, len(appBase.services))
+	appBase.mutex.RLock()
+	copy(out, appBase.services)
+	appBase.mutex.RUnlock()
 	return out
 }
 
@@ -85,8 +229,12 @@ func Instance() App {
 	return defApp
 }
 
+type InitOpts struct {
+	Logger *slog.Logger `env:"-"`
+}
+
 // Instantiate global instance of App with the default implementation.
-func Init(appInfo app.Info) (App, error) {
+func Init(appInfo app.Info, opts InitOpts) (App, error) {
 	err := errors.Msg("app instance already initialized")
 	defAppOnce.Do(func() {
 		err = nil
@@ -123,9 +271,16 @@ func Init(appInfo app.Info) (App, error) {
 			instanceID = unameStr
 		}
 
+		logger := opts.Logger
+		if logger == nil {
+			logger = slog.Default()
+		}
+		logger = logger.With("svc", "_app")
+
 		defApp = &AppBase{
 			appInfo:    appInfo,
 			instanceID: instanceID,
+			log:        logger,
 		}
 	})
 
