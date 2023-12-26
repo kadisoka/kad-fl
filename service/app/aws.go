@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/alloyzeus/go-azfl/errors"
+	"github.com/alloyzeus/go-azfl/v2/errors"
 )
 
 // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint-v3.html
@@ -25,13 +25,13 @@ func getECSTaskID() (taskID string, taskRev string, err error) {
 	client := &http.Client{}
 	resp, err := client.Get(ecsContainerMetadataURI + "/task")
 	if err != nil {
-		return "", "", errors.Wrap("task metadata fetch", err)
+		return "", "", errors.Op("task metadata fetching", err)
 	}
 
 	var taskMetadata ecsTaskMetadata
 	err = json.NewDecoder(resp.Body).Decode(&taskMetadata)
 	if err != nil {
-		return "", "", errors.Wrap("task metadata loading", err)
+		return "", "", errors.Op("task metadata loading", err)
 	}
 
 	parts := strings.Split(taskMetadata.TaskARN, "/")

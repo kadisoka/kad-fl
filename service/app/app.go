@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/alloyzeus/go-azfl/errors"
+	"github.com/alloyzeus/go-azfl/v2/errors"
 	"github.com/kadisoka/kad-fl/app"
 	"github.com/kadisoka/kad-fl/service"
 )

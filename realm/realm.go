@@ -11,7 +11,7 @@ package realm
 import (
 	"github.com/rez-go/stev"
 
-	"github.com/alloyzeus/go-azfl/errors"
+	"github.com/alloyzeus/go-azfl/v2/errors"
 )
 
 const EnvVarsPrefixDefault = "REALM_"
@@ -79,9 +79,9 @@ func InfoFromEnv(envVarsPrefix string, defaultInfo *Info) (Info, error) {
 		info := InfoZero()
 		defaultInfo = &info
 	}
-	err := stev.LoadEnv(envVarsPrefix, defaultInfo)
+	err := stev.LoadFromEnv(envVarsPrefix, defaultInfo)
 	if err != nil {
-		return InfoZero(), errors.Wrap("info loading from environment variables", err)
+		return InfoZero(), errors.Op("info loading from environment variables", err)
 	}
 	return *defaultInfo, nil
 }
