@@ -30,13 +30,13 @@ type Status struct {
 	Ready bool `json:"ready"`
 
 	// Components holds information about service components' status.
-	Components map[string]ComponentStatus `json:"components"`
+	Components map[string]ComponentStatus `json:"components,omitempty"`
 }
 
 // TODO: if component is interprocess, we might want to provide the ping value.
 type ComponentStatus struct {
 	// IsInterprocess indicates whether the component is on different process.
-	IsInterprocess bool `json:"is_interprocess"`
+	IsInterprocess bool `json:"is_interprocess,omitempty"`
 
 	// Ready indicates the component's readiness.
 	//
@@ -46,7 +46,7 @@ type ComponentStatus struct {
 	//   was not be determined.
 	// - If the value is false, the component was reporting that it's not ready.
 	// - If the value is true, the component was reporting that it's ready.
-	Ready *bool `json:"ready,omitempty"`
+	Ready *bool `json:"ready"`
 
-	Components map[string]ComponentStatus `json:"components"`
+	Components map[string]ComponentStatus `json:"components,omitempty"`
 }

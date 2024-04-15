@@ -1,5 +1,5 @@
 github.com/alloyzeus/go-azfl/v2 v2.0.0-20231226052010-801ca2a4c710 h1:C6tOkFvUo8ZM4Mj/F/HT/1NLewry24ZQf/RC32xVoPs=
 github.com/alloyzeus/go-azfl/v2 v2.0.0-20231226052010-801ca2a4c710/go.mod h1:IbzAEabR09S4C3ic9nnu3NeJoJmPkinkxvaD1n6Kpt8=
 github.com/mitchellh/go-wordwrap v1.0.1/go.mod h1:R62XHJLzvMFRBbcrT7m7WgmE1eOyTSsCt+hzestvNj0=
-github.com/rez-go/stev v0.0.0-20231220122940-032b58c0824c h1:eFtpS3mq7ssDXgjIWJhBeagI3XhLMY3TbYAddroJwyo=
-github.com/rez-go/stev v0.0.0-20231220122940-032b58c0824c/go.mod h1:xUdOSy/LoZn1eOy7z5jaYPyY8qquyjEAZgNxGTHNzII=
+github.com/rez-go/stev v0.0.0-20240223131146-33e0d466261f h1:i31zZxfJoofPWeQePkivlm49M4+G8FMUss4hilVrroc=
+github.com/rez-go/stev v0.0.0-20240223131146-33e0d466261f/go.mod h1:xUdOSy/LoZn1eOy7z5jaYPyY8qquyjEAZgNxGTHNzII=
