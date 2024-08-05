@@ -249,27 +249,12 @@ func Init(appInfo app.Info, opts InitOpts) (App, error) {
 		}
 
 		var unameStr string
-		unameStr, err = unameString()
+		unameStr, err = os.Hostname()
 		if err != nil {
 			return
 		}
 
-		var taskID string
-		taskID, _, err = getECSTaskID()
-		if err != nil {
-			return
-		}
-
-		var instanceID string
-		if taskID != "" {
-			if unameStr != "" {
-				instanceID = taskID + " (" + unameStr + ")"
-			} else {
-				instanceID = taskID
-			}
-		} else {
-			instanceID = unameStr
-		}
+		instanceID := fmt.Sprintf("%v@%s", os.Getpid(), unameStr)
 
 		logger := opts.Logger
 		if logger == nil {
